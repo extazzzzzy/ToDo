@@ -1,8 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo/HomeScreen.dart';
 
 class CreateTaskScreen extends StatelessWidget {
-  void createTask() {
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
+  void createTask(BuildContext context) async {
+    String title = titleController.text;
+    String description = descriptionController.text;
+    final prefs = await SharedPreferences.getInstance();
+    if (title.isNotEmpty) { // заголовок введён
+      List<String> tasks = prefs.getStringList('tasks') ?? [];
+      if (description.isEmpty) { // описание отсутствует
+        tasks.add('$title');
+        tasks.add('Описание отсутствует');
+        tasks.add('false');
+        await prefs.setStringList('tasks', tasks);
+
+        final snackBar = SnackBar(
+          content: Text('Задача создана успешно!'),
+          duration: Duration(seconds: 2),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+      else { // описание введено
+        tasks.add('$title');
+        tasks.add('$description');
+        tasks.add('false');
+        await prefs.setStringList('tasks', tasks);
+
+        final snackBar = SnackBar(
+          content: Text('Задача создана успешно!'),
+          duration: Duration(seconds: 2),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+    }
+    else { // заголовок отсутствует
+      final snackBar = SnackBar(
+        content: Text('Введите название задачи!'),
+        duration: Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      return;
+    }
   }
 
   @override
@@ -28,6 +82,7 @@ class CreateTaskScreen extends StatelessWidget {
             child: Column(
               children: [
                 TextField(
+                  controller: titleController,
                   keyboardType: TextInputType.text,
                   decoration: InputDecoration(
                     labelText: '*Название задачи',
@@ -53,6 +108,7 @@ class CreateTaskScreen extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 6.0),
                   child: TextField(
+                    controller: descriptionController,
                     keyboardType: TextInputType.text,
                     decoration: InputDecoration(
                       labelText: '*Описание задачи',
@@ -76,7 +132,7 @@ class CreateTaskScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: createTask,
+                  onPressed: () => createTask(context),
                   child: Text('Создать'),
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all(Colors.amber),
