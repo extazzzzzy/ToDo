@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo/CreateTaskScreen.dart';
+import 'package:todo/EditTaskScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -8,7 +9,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool isChecked = false;
   List<String> tasks = [];
 
   @override
@@ -22,6 +22,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       tasks = prefs.getStringList('tasks') ?? [];
     });
+  }
+
+  void saveTasks(tasks) async { // сохранение нового массива заданий
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('tasks', tasks);
   }
 
   @override
@@ -43,28 +48,66 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView.builder(
         itemCount: tasks.length + 1,
         itemBuilder: (context, index) {
+          // условия отображения задач
           if (tasks.length == 0) {
             return ListTile(
-                title:
+              title:
                 Text(
                   'Список дел/задач пуст',
                   style: TextStyle(
                     fontFamily: 'DushaRegular',
                     fontSize: 20,
                   ),
-                )
+                ),
             );
           }
           else if ((index == 0 || index % 3 == 0) && index != tasks.length) {
-            return ListTile(
-              title:
-              Text(
-                tasks[index],
-                style: TextStyle(
-                  fontFamily: 'DushaRegular',
-                  fontSize: 20,
+            var currentCheckboxIndex = false;
+            if (tasks[index + 2] == 'false') {currentCheckboxIndex = false;}
+            else {currentCheckboxIndex = true;}
+            return Row(
+              children: [
+                Checkbox(
+                  value: currentCheckboxIndex,
+                  onChanged: (bool? newValue) {
+                    setState(() {
+                      if (currentCheckboxIndex == false) {
+                        currentCheckboxIndex = true;
+                        tasks[index + 2] = 'true';
+                        saveTasks(tasks);
+                      }
+                      else {
+                        currentCheckboxIndex = false;
+                        tasks[index + 2] = 'false';
+                        saveTasks(tasks);
+                      }
+                    });
+                  },
+                  activeColor: Colors.amber,
                 ),
-              )
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => EditTaskScreen(
+                            titleIndex: index,
+                            descriptionIndex: index + 1,
+                          ),
+                      ),
+                    );
+                  },
+                  child:
+                  Text(
+                    tasks[index],
+                    style: TextStyle(
+                      fontFamily: 'DushaRegular',
+                      fontSize: 20,
+                      decoration: currentCheckboxIndex ? TextDecoration.lineThrough : TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ],
             );
           }
           else {
@@ -73,30 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
 
-      // body: Padding(
-      //   padding: EdgeInsets.only(left: 20.0),
-      //   child: Row(
-      //     children: [
-      //       Checkbox(
-      //         value: isChecked,
-      //         onChanged: (bool? newValue) {
-      //           setState(() {
-      //             if (isChecked == false) {isChecked = true;}
-      //             else {isChecked = false;}
-      //           });
-      //         },
-      //         activeColor: Colors.amber,
-      //       ),
-      //       Text(
-      //         'Здесь будут задачи',
-      //         style: TextStyle(
-      //           fontFamily: 'DushaRegular',
-      //           fontSize: 24,
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
